@@ -1,0 +1,46 @@
+name: podNET opinionated .NET build, test and NuGet publish GitHub Workflow
+on:
+  workflow_call:
+    inputs:
+      skip-auto-checkout: { type: boolean }
+      skip-auto-setup-dotnet: { type: boolean }
+      skip-prepack-debug: { type: boolean }
+      skip-test: { type: boolean }
+      skip-pack: { type: boolean }
+      version: { default: "$(echo ${{ github.ref_name }} | sed 's/^v//')", type: string }
+      commit: { default: "${{ github.sha }}", type: string }
+      skip-store-artifact: { type: boolean }
+      skip-store-release: { type: boolean }
+    secrets:
+      NUGET_API_KEY: { required: false }
+
+jobs:
+  default:
+    runs-on: ubuntu-latest
+    steps:      
+    - if: ${{ !inputs.skip-auto-checkout }}
+      uses: actions/checkout@v4
+    - if: ${{ !inputs.skip-auto-setup-dotnet }}
+      uses: actions/setup-dotnet@v4
+    - if: ${{ !inputs.skip-prepack-debug }}
+      run: dotnet pack -c debug
+      shell: pwsh
+    - if: ${{ !inputs.skip-test }}
+      run: dotnet test
+      shell: pwsh
+    - if: ${{ !inputs.skip-pack }}
+      run: dotnet pack -p:Version=${{ inputs.version }} -p:RepositoryCommit=${{ inputs.commit }}
+      shell: pwsh
+    - if: ${{ secrets.NUGET_API_KEY }}
+      run: dotnet nuget push ./artifacts/package/release/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+      shell: pwsh
+    - if: ${{ !inputs.skip-store-artifact }}
+      uses: actions/upload-artifact@v4
+      with: 
+        path: ./artifacts/package/release/*.*nupkg
+        if-no-files-found: error
+    - if: ${{ !inputs.skip-store-release }}
+      uses: softprops/action-gh-release@v2
+      with:
+        files: ./artifacts/package/release/*.*nupkg
+        

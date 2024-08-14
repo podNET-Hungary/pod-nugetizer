@@ -34,7 +34,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: podnet-Hungary/pod-nugetizer@v1
+      - uses: podNET-Hungary/pod-nugetizer@v1
         with:
           nuget-push-api-key: ${{ secrets.NUGET_API_KEY }}
 ```
@@ -58,9 +58,46 @@ Inputs as of v1:
 
 So for example, calling the action like so:
 ```yml
-- uses: podnet-Hungary/pod-nugetizer@v1
+- uses: podNET-Hungary/pod-nugetizer@v1
   with: { skip-prepack-debug: true }
 ```
 will result in the `dotnet pack -c debug` step being skipped **and** the `dotnet nuget push` command being skipped because of the API key is not being supplied.
 
 For an up-to-date list of all inputs, [take a look at the source](action.yml).
+
+## Workflow
+
+There is also a workflow ([source](.github/workflows/my-workflow.yml)) that mirrors the action's behavior with a few differences:
+- The dependant workflow can *inherit* the secrets of the caller if the caller sets secrets: inherit in their workflow.
+- The workflow defines the full job, not just the steps. This includes it defining the working environment (`runs-on`).
+- The workflow's job is just a job like any other with individually defined steps. Contrast this with the `composite` action, which seems like a single step in the dependant's runs. So using the workflow will list all steps individually, while using the action will only list one large step that does everything.
+
+Usage is similar. From a dependant repo you can define your GitHub Actions workflow (.github/workflows/my-workflow.yml):
+
+```yml
+on: { push: { tags: ["v[0-9]+.[0-9]+.[0-9]+*"] } }
+    
+jobs:
+  publish:
+    uses: podNET-Hungary/pod-nugetizer/.github/workflows/default.yml@v1
+    secrets: inherit
+```
+
+This being so well-formed, it's now possible to simply just:
+```yml
+on: { push: { tags: ["v[0-9]+.[0-9]+.[0-9]+*"] } }
+jobs: { publish: { uses: podNET-Hungary/pod-nugetizer/.github/workflows/default.yml@v1, secrets: inherit }}
+```
+
+Or similarly to the action, passing of the parameters:
+```yml
+on: { push: { tags: ["v[0-9]+.[0-9]+.[0-9]+*"] } }
+    
+jobs:
+  publish:
+    uses: podNET-Hungary/pod-nugetizer/.github/workflows/default.yml@v1
+    with:
+      skip-prepack-debug: true
+    secrets:
+      NUGET_API_KEY: ${{ secrets.MY_NUGET_KEY }}
+```
