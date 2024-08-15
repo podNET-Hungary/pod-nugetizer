@@ -9,6 +9,7 @@ on:
       skip-pack: { type: boolean }
       version: { default: "$(echo ${{ github.ref_name }} | sed 's/^v//')", type: string }
       commit: { default: "${{ github.sha }}", type: string }
+      nuget-source: { default: "https://api.nuget.org/v3/index.json", type: string }
       skip-store-artifact: { type: boolean }
       skip-store-release: { type: boolean }
     secrets:
@@ -32,7 +33,7 @@ jobs:
       run: dotnet pack -p:Version=${{ inputs.version }} -p:RepositoryCommit=${{ inputs.commit }}
       shell: pwsh
     - if: ${{ secrets.NUGET_API_KEY }}
-      run: dotnet nuget push ./artifacts/package/release/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+      run: dotnet nuget push ./artifacts/package/release/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s ${{ inputs.nuget-source }}
       shell: pwsh
     - if: ${{ !inputs.skip-store-artifact }}
       uses: actions/upload-artifact@v4

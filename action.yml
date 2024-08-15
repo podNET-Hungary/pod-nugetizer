@@ -1,13 +1,16 @@
 name: podNET opinionated .NET build, test and NuGet publish GitHub Action
+description: An opinionated tool for building, testing and publishing .NET projects as NuGet packages.
+branding: { icon: gift, color: purple }
 inputs:
   skip-auto-checkout: { }
   skip-auto-setup-dotnet: { }
   skip-prepack-debug: { }
   skip-test: { }
   skip-pack: { }
+  nuget-push-api-key: { }
   version: { default: "$(echo ${{ github.ref_name }} | sed 's/^v//')" }
   commit: { default: "${{ github.sha }}" }
-  nuget-push-api-key: { }
+  nuget-source: { default: "https://api.nuget.org/v3/index.json" }
   skip-store-artifact: { }
   skip-store-release: { }
 runs:
@@ -27,7 +30,7 @@ runs:
       run: dotnet pack -p:Version=${{ inputs.version }} -p:RepositoryCommit=${{ inputs.commit }}
       shell: pwsh
     - if: ${{ inputs.nuget-push-api-key }}
-      run: dotnet nuget push ./artifacts/package/release/*.nupkg -k ${{ inputs.nuget-push-api-key }} -s https://api.nuget.org/v3/index.json
+      run: dotnet nuget push ./artifacts/package/release/*.nupkg -k ${{ inputs.nuget-push-api-key }} -s ${{ inputs.nuget-source }}
       shell: pwsh
     - if: ${{ !inputs.skip-store-artifact }}
       uses: actions/upload-artifact@v4
