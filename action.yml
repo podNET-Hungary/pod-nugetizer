@@ -15,23 +15,23 @@ inputs:
   skip-store-release: { }
 runs:
   using: composite
-  steps:      
+  steps:
     - if: ${{ !inputs.skip-auto-checkout }}
       uses: actions/checkout@v4
     - if: ${{ !inputs.skip-auto-setup-dotnet }}
       uses: actions/setup-dotnet@v4
     - if: ${{ !inputs.skip-prepack-debug }}
-      run: dotnet pack -c debug
+      run: foreach ($csproj in Get-ChildItem src\*.csproj -File -Recurse) { dotnet pack $csproj.FullName -c debug }
       shell: pwsh
     - if: ${{ !inputs.skip-test }}
       run: dotnet test
-      shell: pwsh
+      shell: bash
     - if: ${{ !inputs.skip-pack }}
-      run: dotnet pack -p:Version=${{ inputs.version }} -p:RepositoryCommit=${{ inputs.commit }}
+      run: dotnet pack -c release -p:Version=${{ inputs.version }} -p:RepositoryCommit=${{ inputs.commit }}
       shell: pwsh
     - if: ${{ inputs.nuget-push-api-key }}
       run: dotnet nuget push ./artifacts/package/release/*.nupkg -k ${{ inputs.nuget-push-api-key }} -s ${{ inputs.nuget-source }}
-      shell: pwsh
+      shell: bash
     - if: ${{ !inputs.skip-store-artifact }}
       uses: actions/upload-artifact@v4
       with: 
