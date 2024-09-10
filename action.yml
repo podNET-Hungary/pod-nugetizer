@@ -30,7 +30,12 @@ runs:
       run: dotnet pack -c release -p:Version=${{ inputs.version }} -p:RepositoryCommit=${{ inputs.commit }}
       shell: pwsh
     - if: ${{ inputs.nuget-push-api-key }}
-      run: dotnet nuget push ./artifacts/package/release/*.nupkg -k ${{ inputs.nuget-push-api-key }} -s ${{ inputs.nuget-source }}
+      run: |
+           if ls ./artifacts/package/release/*0.0.0*.*nupkg 1> /dev/null 2>&1; then
+             echo "::error title=Invalid package::Invalid *0.0.0*.*nupkg package in ./artifacts/package/release/"
+             exit 1
+           fi
+           dotnet nuget push ./artifacts/package/release/*.nupkg -k ${{ inputs.nuget-push-api-key }} -s ${{ inputs.nuget-source }}
       shell: bash
     - if: ${{ !inputs.skip-store-artifact }}
       uses: actions/upload-artifact@v4

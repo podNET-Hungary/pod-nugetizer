@@ -31,7 +31,13 @@ jobs:
       run: dotnet test
     - if: ${{ !inputs.skip-pack }}
       run: dotnet pack -c release -p:Version=${{ inputs.version }} -p:RepositoryCommit=${{ inputs.commit }}
-    - run: if ("${{ secrets.NUGET_API_KEY }}") { dotnet nuget push ./artifacts/package/release/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s ${{ inputs.nuget-source }} }
+    - run: |
+           if ("${{ secrets.NUGET_API_KEY }}") { 
+             if (Get-Item "./artifacts/package/release/*0.0.0*.*nupkg") { 
+               throw "Invalid *0.0.0*.*nupkg package in ./artifacts/package/release/"
+             }
+             dotnet nuget push ./artifacts/package/release/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s ${{ inputs.nuget-source }} 
+           }
       name: dotnet nuget push ./artifacts/package/release/*.nupkg -s ${{ inputs.nuget-source }}
     - if: ${{ !inputs.skip-store-artifact }}
       uses: actions/upload-artifact@v4
